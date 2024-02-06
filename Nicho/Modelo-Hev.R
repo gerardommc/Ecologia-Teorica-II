@@ -46,5 +46,24 @@ par.estim <- data.frame(rbind(coef(m4), coef(m22), coef(m56)))
 
 par.estim$Temp <-c(4, 22, 56)
 
-ggplot(par.estim) + geom_point(aes(x = Temp, y = log(rho)))
-ggplot(par.estim) + geom_point(aes(x = Temp, y = log(kappa)))
+ggplot(par.estim) + geom_point(aes(x = Temp, y = log(rho))) +
+  geom_smooth(aes(x = Temp, y = log(rho)), method = "lm")
+ggplot(par.estim) + geom_point(aes(x = Temp, y = log(kappa))) +
+  geom_smooth(aes(x = Temp, y = log(kappa)), method = "lm")
+
+# Modelos para los parámetros
+
+m.rho <- lm(log(rho) ~ Temp, data = par.estim)
+m.kappa <- lm(log(kappa) ~ Temp + Temp^2, data = par.estim)
+
+par(mfrow = c(2,2))
+plot(m.rho)
+plot(m.kappa)
+
+rho.coef <- coef(m.rho)
+kappa.coef <- coef(m.kappa)
+
+coef.pk <- data.frame(par = c("ap", "Bp", "ak", "Bk"), 
+                      valor = c(rho.coef, kappa.coef))
+
+write.csv(coef.pk, "Nicho/Coeficientes-pk.csv", row.names = F)

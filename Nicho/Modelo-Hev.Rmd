@@ -1,0 +1,207 @@
+---
+title: "Modelo de supervivencia"
+author: "Gerardo Martín"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+datos <- read.csv("Nicho/Datos/HeV-survival.csv")
+
+d.4 <- subset(datos, Temp == 4)
+d.22 <- subset(datos, Temp == 22)
+d.56 <- subset(datos, Temp == 56)
+```
+
+
+```{r}
+library(ggplot2)
+
+ggplot(d.4) + geom_point(aes(x = Time, y = ln.S)) +
+  geom_smooth(aes(x = Time, y = ln.S), method = "lm")
+
+ggplot(d.22) + geom_point(aes(x = Time, y = ln.S)) +
+  geom_smooth(aes(x = Time, y = ln.S), method = "loess")
+
+ggplot(d.56) + geom_point(aes(x = Time, y = ln.S)) +
+  geom_smooth(aes(x = Time, y = ln.S), method = "loess")
+```
+
+## Estimando los parámetros de la distribución Weibull
+
+La función de distribución acumulativa del modelo Weibull es:
+
+$$
+S(t) = \exp \left ( - (\rho t)^\kappa \right)
+$$
+
+Para facilitar la rutina de optimización, analizaremos:
+
+$$
+\log S(t) = - (\rho t)^\kappa
+$$
+Para cada temperatura por separado con `nls`, una rutina de optimización para regresiones no lineales. Al igual que con `lm`, en `nls` tenemos que proporcionar la fórmula del modelo, el objeto que contiene los datos y en esta ocasión, una propuesta de los valores posibles de los parámetros. Esto es necesario porque `nls` funciona de manera iterativa, resolviendo el modelo primero con los valores propuestos y con unos nuevos hasta encontrar la "cima" de la función de verosimilitud que corresponde a las coordenadas de parámetros que disminuyen la diferencia entre los datos y las predicciones del modelo.
+
+```{r}
+m4 <- nls(ln.S ~ -( rho * Time )^ (kappa), 
+          data = d.4, 
+          start = list(rho = 1, kappa = 0.9),
+          lower = c(0.00001, 0.1),
+          upper = c(1, 1),
+          algorithm =  "port")
+
+m22 <- nls(ln.S ~ -( rho * Time )^ (kappa), 
+          data = d.22, 
+          start = list(rho = 1, kappa = 0.9),
+          lower = c(0.0001, 0.1),
+          upper = c(1, 1),
+          algorithm =  "port")
+
+m56 <- nls(ln.S ~ -( rho * Time )^ (kappa), 
+          data = d.56, 
+          start = list(rho = 1, kappa = 0.9),
+          lower = c(0.1, 0.1),
+          upper = c(105, 1.5),
+          algorithm =  "port")
+```
+
+Una vez ajustados los modelos para cada temperatura, extraeremos los valores estimados para cada parámetro y veremos cómo los valores cambian con la temperatura:
+
+```{r}
+par.estim <- data.frame(rbind(coef(m4), coef(m22), coef(m56)))
+
+par.estim$Temp <-c(4, 22, 56)
+
+ggplot(par.estim) + geom_point(aes(x = Temp, y = log(rho))) +
+  geom_smooth(aes(x = Temp, y = log(rho)), method = "lm")
+ggplot(par.estim) + geom_point(aes(x = Temp, y = log(kappa))) +
+  geom_smooth(aes(x = Temp, y = log(kappa)), method = "lm")
+```
+
+Para finalizar nuestro modelo, ahora ajustaremos un modelo para convertir los parámetros $\rho$ y $\kappa$ en funciones de la temperatura:
+
+```{r}
+m.rho <- lm(log(rho) ~ Temp, data = par.estim)
+m.kappa <- lm(log(kappa) ~ Temp + Temp^2, data = par.estim)
+
+rho.coef <- coef(m.rho)
+kappa.coef <- coef(m.kappa)
+
+coef.pk <- data.frame(par = c("ap", "Bp", "ak", "Bk"), 
+                      valor = c(rho.coef, kappa.coef))
+```
+
+```{r echo=F}
+knitr::kable(coef.pk)
+```
+
+Con estos análisis obtenemos el modelo Weibull modificado para que sus parámetros sean funciones de la temperatura:
+
+$$
+S(t) = \exp \left( - \left(\exp(\alpha_{\rho} + \beta_{\rho} T) t^{\exp(\alpha_{\kappa} + \beta_{\kappa}T)} \right) \right)
+$$
+
+## Representación gráfica del modelo
+
+Para ver el efecto de la temperatura sobre la supervivencia, necesitamos crear primero una tabla que contenga los tiempos y temperaturas para sustituir en el modelo:
+
+```{r}
+datos.nuevos <- expand.grid(Tiempo = seq(0, 1000, len = 50),
+                            Temp = seq(4, 56, len = 50))
+knitr::kable(head(datos.nuevos))
+```
+
+Posteriormente, tenemos que crear una función que hará los cálculos:
+
+```{r}
+weib <- function(Tiempo = NA, Temp = NA, pars = NA){
+  ap <- pars$ap
+  Bp <- pars$Bp
+  ak <- pars$ak
+  Bk <- pars$Bk
+  
+  p <- exp(ap + Bp * Temp)
+  k <- exp(ak + Bk * Temp)
+  
+  S <- exp(- (p * Tiempo) ^ k)
+  return(S)
+}
+```
+
+Con esta función ya podemos generar un gráfico que nos permita ver dicho efecto de la temperatura:
+
+```{r}
+pars <- as.list(coef.pk$valor)
+names(pars) <- coef.pk$par
+
+Sup <- weib(Tiempo = datos.nuevos$Tiempo,
+              Temp = datos.nuevos$Temp,
+              pars = pars)
+
+datos.nuevos$Sup <- Sup
+```
+
+Graficando las predicciones del modelo con `lattice`:
+
+```{r fig.height=6, fig.width=5, fig.align='center', fig.cap="La escala de color indica el logaritmo base 10 de la proporción de virus viable a cada temperatura y punto en el tiempo. Como punto de referencia, el valor de corte para considerar que algo es estéril es -4."}
+library(lattice)
+
+levelplot(log10(Sup) ~ Temp + Tiempo, data = datos.nuevos,
+          drape = T)
+```
+
+# ¿Cómo representamos este modelo en el espacio?
+
+## Escenario simple
+
+Tomar en cuenta la temperatura promedio y resolver como se hizo arriba sustituyendo la temperatura por una capa ráster y seleccionando una serie de puntos en el tiempo para resolver.
+
+## Escenario más realista
+
+Consideraciones para un escenario *realista*: lLdía. Estas fluctuaciones son en magnitud mucho mayores que las que hay en períodos más pequeños que las 12h que separan los puntos de temperatura máxima y mínima, y por lo tanto podemos asumir que tienen un efecto menor sobre la viabilidad del virus. Entonces ¿cómo tomamos en cuenta los cambios de temperatura en el modelo? Podemos por un lado representar matemáticamente esos cambios con un coseno:
+
+$$
+T = T_{min} + T_{dif}\cos²(\pi t)
+$$
+
+donde $T_{min}$ es la temperatura mínima y $T_{dif}$ es la diferencia entre la temperatura mínima y máxima. Una dificultad adicional que introduce este escenario es que necesitamos convertir el modelo Weibull en una ecuación diferencial ordinaria y sustituir la temperatura como función del tiempo dentro de las ecuaciones para los parámetros $\rho$ y $\kappa$.
+
+### Transformando el modelo Weibull en ecuación diferencial
+
+Comencemos por diferenciar la distribución acumulativa, aplicando la regla de las funciones encadenadas:
+
+$$
+\frac{d}{dx} f(g(x)) = g'(x) f'(g(x))
+$$
+Sabemos que:
+
+1. $f(g(x)) = \exp(-(\rho t)^\kappa)$
+2. $g'(x) = -(\rho t)^\kappa$
+
+Por lo tanto
+
+$$
+\frac{dS}{dt} = - \rho \kappa(\rho t) ^{\kappa - 1} \exp(-(\rho t)^\kappa)
+$$
+
+Con esto, aún no terminamos, porque necesitamos la forma implícita, de modo que $S$ aparezca de ambos lados de la ecuación. Primero sustituimos $S=\exp(-(\rho t)^\kappa)$:
+
+$$
+\frac{dS}{dt} = - \rho \kappa(\rho t) ^{\kappa - 1} S
+$$
+
+y para eliminar $t$ necesitamos representarla en términos de $S$:
+
+$$
+t = \frac{-(\log S)^\frac{1}{\kappa}}{\rho}
+$$
+
+Y terminamos sustituyendo $t$ para obtener:
+
+$$
+\frac{dS}{dt} = - \left ( \rho \kappa (- \log S)^{1 - \frac{1}{\kappa}} \right) S
+$$

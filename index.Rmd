@@ -18,6 +18,12 @@ Ver [Encuadre](Encuadre.pdf), [Programa](Programa.pdf), [Calendario de participa
 
     - [Una mirada demográfica](Nicho/Caso-demografico.pdf)
     
+        - [Derivación de modelo y estimación de parámetros](Modelo-Hev.html)
+        
+        - [Script de R](Nicho/Modelo-Hev.R)
+        
+        - [Representación espacial del modelo](Rep-esp-HeV.html)
+    
     - [Una mirada física](Nicho/Caso-físico.pdf)
     
     - [Una mirada biótica](Nicho/Caso-biotico.pdf)

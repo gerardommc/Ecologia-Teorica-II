@@ -1,0 +1,26 @@
+---
+title: "Simulaciones espaciales con el modelo de supervivencia"
+author: "Gerardo Martín"
+date: "2024-02-06"
+output: 
+  bookdown::html_document2:
+    toc: true
+    number_sections: false
+    toc_float: true
+    fig_caption: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Intro
+
+Anteriormente vimos cómo generar un modelo de supervivencia en función del tiempo y de la temperatura con la función Weibull. Ahora veremos cómo utilizar dicho modelo para obtener predicciones espaciales con base en las condiciones de temperatura ambiental. Los requerimientos son:
+
+1. Identificar qué datos de temperatura utilizar
+2. Desarrollar la función para simular la ecuación diferencial
+3. Diseñar escenarios para simular
+
+
