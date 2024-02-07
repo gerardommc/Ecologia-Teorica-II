@@ -56,7 +56,7 @@ Y continuamos tal y como lo hicimos anteriormente, usando los valores de bio1 co
 pars <- as.list(coef.pk$valor)
 names(pars) <- coef.pk$par
 
-Sup.bio1 <- weib(Tiempo = 720,
+Sup.bio1 <- weib(Tiempo = 12,
               Temp = bio1.df$Bio1,
               pars = pars)
 ```
@@ -78,7 +78,7 @@ weib.ode <- function(t, y, params){
   with(params, {
       S <- y
       
-      Temp <- Tmax - Tdif * cos(pi * t/1440)^2
+      Temp <- Tmax - Tdif * cos(pi * t/24)^2
       
       rho <- exp(ap + Bp * Temp)
       
@@ -111,8 +111,8 @@ Ahora, resolveremos el modelo para cada par de datos de temperatura máxima y di
 ```{r}
 library(deSolve)
 
-y <- 1
-t <- seq(0, 720, length(60))
+y <- 0.9999
+t <- seq(0, 12, length(100))
 ```
 
 Estos los reciclaremos en todas las simulaciones por píxel por medio de una iteración con `for`. Yo utilizo `doParallel` para aumentar la velocidad:
@@ -120,7 +120,7 @@ Estos los reciclaremos en todas las simulaciones por píxel por medio de una ite
 ```{r}
 library(tidyr)
 library(doParallel)
-registerDoParallel(cores = 24)
+registerDoParallel(cores = 8)
 
 sims <- foreach(i = 1:nrow(Temps.df), .combine = c) %dopar% {
   params <- pars
@@ -129,6 +129,23 @@ sims <- foreach(i = 1:nrow(Temps.df), .combine = c) %dopar% {
   out <- lsoda(y = y, times = t,
                func = weib.ode,
                parms = params)
+  return(out[nrow(out), 2])
 }
 ```
 
+Ahora transformaremos las predicciones de supervivencia con temperatura fluctuante en una capa raster:
+
+```{r fig.height=6, fig.width=4}
+Sup.fluc <- data.frame(Temps.df[, c("x", "y")], Sup = sims)
+Sup.fluc.r <- rast(Sup.fluc)
+plot(Sup.fluc.r)
+```
+
+Hemos aprendido a implementar una serie de análisis para utilizar conocimiento adquirido en laboratorio para generar predicciones sobre la posible susceptibilidad de Hendra virus a las características ambientales. Para continuar trataremos de responder las siguientes preguntas con base en la biología del organismo de que se trata:
+
+1. ¿Qué posible utilidad tendría este modelo tan simple?
+2. ¿Bajo qué supuestos se le daría ese uso?
+3. ¿Con qué propósito utilizarían la información ggenerada?
+4. ¿Cuáles son las limitaciones?
+5. ¿Cómo incorporarían nuevos factores en este modelo?
+6. ¿Es factible generar un modelo más complejo que este?

@@ -27,14 +27,14 @@ d.56 <- subset(datos, Temp == 56)
 ```{r warning=F, echo = F}
 library(ggplot2)
 
-ggplot(d.4) + geom_point(aes(x = Time, y = ln.S)) +
-  geom_smooth(aes(x = Time, y = ln.S), method = "lm")
+ggplot(d.4) + geom_point(aes(x = Time.h, y = ln.S)) +
+  geom_smooth(aes(x = Time.h, y = ln.S), method = "lm")
 
-ggplot(d.22) + geom_point(aes(x = Time, y = ln.S)) +
-  geom_smooth(aes(x = Time, y = ln.S), method = "loess")
+ggplot(d.22) + geom_point(aes(x = Time.h, y = ln.S)) +
+  geom_smooth(aes(x = Time.h, y = ln.S), method = "loess")
 
-ggplot(d.56) + geom_point(aes(x = Time, y = ln.S)) +
-  geom_smooth(aes(x = Time, y = ln.S), method = "loess")
+ggplot(d.56) + geom_point(aes(x = Time.h, y = ln.S)) +
+  geom_smooth(aes(x = Time.h, y = ln.S), method = "loess")
 ```
 
 ## Estimando los parámetros de la distribución Weibull
@@ -53,14 +53,14 @@ $$
 Para cada temperatura por separado con `nls`, una rutina de optimización para regresiones no lineales. Al igual que con `lm`, en `nls` tenemos que proporcionar la fórmula del modelo, el objeto que contiene los datos y en esta ocasión, una propuesta de los valores posibles de los parámetros. Esto es necesario porque `nls` funciona de manera iterativa, resolviendo el modelo primero con los valores propuestos y con unos nuevos hasta encontrar la "cima" de la función de verosimilitud que corresponde a las coordenadas de parámetros que disminuyen la diferencia entre los datos y las predicciones del modelo.
 
 ```{r}
-m4 <- nls(ln.S ~ -( rho * Time )^ (kappa), 
+m4 <- nls(ln.S ~ -( rho * Time.h )^ (kappa), 
           data = d.4, 
           start = list(rho = 1, kappa = 0.9),
           lower = c(0.00001, 0.1),
           upper = c(1, 1),
           algorithm =  "port")
 
-m22 <- nls(ln.S ~ -( rho * Time )^ (kappa), 
+m22 <- nls(ln.S ~ -( rho * Time.h )^ (kappa), 
           data = d.22, 
           start = list(rho = 1, kappa = 0.9),
           lower = c(0.0001, 0.1),
@@ -111,12 +111,38 @@ $$
 S(t) = \exp \left( - \left(\exp(\alpha_{\rho} + \beta_{\rho} T) t^{\exp(\alpha_{\kappa} + \beta_{\kappa}T)} \right) \right)
 $$
 
+## Ajustando el modelo completo
+
+Debido a lo complejo de proponer tantos parámetros para el modelo, hemos decidido ajustar modelos separdos, uno para cada temperatura y otros para cada parámetro, no obstante, lo más recomendable es ajustar el modelo completo, y utilizaremos los valores estimados para proponer los valores iniciales de a rutina de optimización:
+
+```{r}
+pars <- as.list(coef.pk$valor)
+names(pars) <- coef.pk$par
+mod <- nls(ln.S ~ -(exp(ap  + Bp * Temp) * Time.h)^exp(ak + Bk * Temp), 
+           data = datos,
+           start = pars,
+           lower = c(-12, 0, -1, -0.05),
+           upper = c(-3, 0.5, 0.1, 0.1),
+           algorithm = "port")
+summary(mod)
+```
+
+Y guardamos los resultados
+
+```{r eval = F}
+coef.mod <- data.frame(par = names(pars),
+                       valor = coef(mod))
+
+write.csv(coef.mod, "Nicho/Coeficientes-pk.csv")
+```
+
+
 ## Representación gráfica del modelo
 
 Para ver el efecto de la temperatura sobre la supervivencia, necesitamos crear primero una tabla que contenga los tiempos y temperaturas para sustituir en el modelo:
 
 ```{r}
-datos.nuevos <- expand.grid(Tiempo = seq(0, 1000, len = 100),
+datos.nuevos <- expand.grid(Tiempo = seq(0, 12, len = 100),
                             Temp = seq(4, 56, len = 100))
 knitr::kable(head(datos.nuevos))
 ```
@@ -141,12 +167,11 @@ weib <- function(Tiempo = NA, Temp = NA, pars = NA){
 Con esta función ya podemos generar un gráfico que nos permita ver dicho efecto de la temperatura:
 
 ```{r}
-pars <- as.list(coef.pk$valor)
-names(pars) <- coef.pk$par
+pars.1 <- as.list(coef(mod))
 
 Sup <- weib(Tiempo = datos.nuevos$Tiempo,
               Temp = datos.nuevos$Temp,
-              pars = pars)
+              pars = pars.1)
 
 datos.nuevos$Sup <- Sup
 ```
@@ -159,6 +184,7 @@ library(lattice)
 levelplot(log10(Sup) ~ Tiempo + Temp, data = datos.nuevos,
           drape = T)
 ```
+
 
 # ¿Cómo representamos este modelo en el espacio?
 
