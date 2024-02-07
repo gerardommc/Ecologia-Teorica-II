@@ -116,8 +116,8 @@ $$
 Para ver el efecto de la temperatura sobre la supervivencia, necesitamos crear primero una tabla que contenga los tiempos y temperaturas para sustituir en el modelo:
 
 ```{r}
-datos.nuevos <- expand.grid(Tiempo = seq(0, 1000, len = 50),
-                            Temp = seq(4, 56, len = 50))
+datos.nuevos <- expand.grid(Tiempo = seq(0, 1000, len = 100),
+                            Temp = seq(4, 56, len = 100))
 knitr::kable(head(datos.nuevos))
 ```
 
@@ -153,10 +153,10 @@ datos.nuevos$Sup <- Sup
 
 Graficando las predicciones del modelo con `lattice`:
 
-```{r fig.height=6, fig.width=5, fig.align='center', fig.cap="La escala de color indica el logaritmo base 10 de la proporción de virus viable a cada temperatura y punto en el tiempo. Como punto de referencia, el valor de corte para considerar que algo es estéril es -4."}
+```{r fig.height=5, fig.width=6, fig.align='center', fig.cap="La escala de color indica el logaritmo base 10 de la proporción de virus viable a cada temperatura y punto en el tiempo. Como punto de referencia, el valor de corte para considerar que algo es estéril es -4."}
 library(lattice)
 
-levelplot(log10(Sup) ~ Temp + Tiempo, data = datos.nuevos,
+levelplot(log10(Sup) ~ Tiempo + Temp, data = datos.nuevos,
           drape = T)
 ```
 

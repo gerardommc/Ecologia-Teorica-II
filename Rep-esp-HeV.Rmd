@@ -24,3 +24,111 @@ Anteriormente vimos cómo generar un modelo de supervivencia en función del tie
 3. Diseñar escenarios para simular
 
 
+# Escenario simple
+
+Para proyectar nuestro modelo Weibull en el espacio de manera sencilla, utilizaremos una capa raster de temperatura anual promedio. Como corte de tiempo, fijaremos 12 h = 720 min.
+
+Importaremos primero la capa ya recortada de temperatura anual promedio para la región del mundo donde tiene sentido biológico la representación de los patrones de supervivencia:
+
+```{r fig.height=6, fig.width=4}
+library(terra)
+
+bio1 <- rast("Nicho/Bio1.tif")
+plot(bio1)
+```
+
+Ahora importamos los coeficientes del modelo y la función que escribimos anteriormente para hacer los cálculos.
+
+```{r}
+coef.pk <- read.csv("Nicho/Coeficientes-pk.csv") #Importando coeficientes
+source("Nicho/weibull.R") #Importando la función
+```
+
+Para hacer los cálculos, tenemos que transformar la capa bio1 a una tabla:
+
+```{r}
+bio1.df <- as.data.frame(bio1, xy = T)
+```
+
+Y continuamos tal y como lo hicimos anteriormente, usando los valores de bio1 como temperatura:
+
+```{r}
+pars <- as.list(coef.pk$valor)
+names(pars) <- coef.pk$par
+
+Sup.bio1 <- weib(Tiempo = 720,
+              Temp = bio1.df$Bio1,
+              pars = pars)
+```
+
+Ahora tenemos que añadir las predicciones de supervivencia a `bio1.df` y transformar a raster:
+
+```{r}
+bio1.df$Sup <- Sup.bio1
+Sup.r <- rast(bio1.df[, -3])
+plot(Sup.r)
+```
+
+# Escenario realista
+
+Comenzaremos creando la función de integración de la ecuación diferencial porque al sustituir la temperatura por el tiempo hemos eliminado la posibilidad de una forma cerrada como en la función Weibull del ejercicio anterior.
+
+```{r}
+weib.ode <- function(t, y, params){
+  with(params, {
+      S <- y
+      
+      Temp <- Tmax - Tdif * cos(pi * t/1440)^2
+      
+      rho <- exp(ap + Bp * Temp)
+      
+      kappa <- exp(ak + Bk * Temp)
+      
+      dS <- - rho * kappa * (-log(S))^(1 - 1/kappa) * S
+      
+      list(c(dS))
+  })
+}
+```
+
+El semestre pasado vimos cómo integrar sistemas de ecuaciones diferenciales ordinarias con el paquete `deSolve`, lo cual volveremos a hacer en esta ocasión, pero veremos cómo utilizar los datos de temperatura de una capa ráster. Para ello importaremos las capas de temperatura min y max en dicho formato, y las transformaremos a `data.frame`:
+
+```{r}
+Tmax <- rast("Nicho/Tmax-01.tif")
+Tmin <- rast("Nicho/Tmin-01.tif")
+
+Tdif <- Tmax - Tmin
+
+Tmax.df <- as.data.frame(Tmax, xy = T)
+Tdif.df <- as.data.frame(Tdif, xy = F)
+
+Temps.df <- data.frame(Tmax.df, Tdif = Tdif.df$`Tmax-01`)
+names(Temps.df) <- c("x", "y", "Tmax", "Tdif")
+```
+
+Ahora, resolveremos el modelo para cada par de datos de temperatura máxima y diferencia dando como resultado una trayectoria de supervivencia a lo largo de 12h (720 min) para cada píxel. Para ahorrarnos datos, sólo utilizaremos el valor final de supervivencia. Primero preparamos el valor inicial y el vector que contiene los puntos en el tiempo para evaluar la supervivencia
+
+```{r}
+library(deSolve)
+
+y <- 1
+t <- seq(0, 720, length(60))
+```
+
+Estos los reciclaremos en todas las simulaciones por píxel por medio de una iteración con `for`. Yo utilizo `doParallel` para aumentar la velocidad:
+
+```{r}
+library(tidyr)
+library(doParallel)
+registerDoParallel(cores = 24)
+
+sims <- foreach(i = 1:nrow(Temps.df), .combine = c) %dopar% {
+  params <- pars
+  params$Tmax <- Temps.df$Tmax[i]
+  params$Tdif <- Temps.df$Tdif[i]
+  out <- lsoda(y = y, times = t,
+               func = weib.ode,
+               parms = params)
+}
+```
+
