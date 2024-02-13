@@ -142,8 +142,8 @@ write.csv(coef.mod, "Nicho/Coeficientes-pk.csv")
 Para ver el efecto de la temperatura sobre la supervivencia, necesitamos crear primero una tabla que contenga los tiempos y temperaturas para sustituir en el modelo:
 
 ```{r}
-datos.nuevos <- expand.grid(Tiempo = seq(0, 12, len = 100),
-                            Temp = seq(4, 56, len = 100))
+datos.nuevos <- expand.grid(Tiempo = seq(0, 12, len = 50),
+                            Temp = seq(4, 56, len = 50))
 knitr::kable(head(datos.nuevos))
 ```
 
@@ -181,8 +181,10 @@ Graficando las predicciones del modelo con `lattice`:
 ```{r fig.height=5, fig.width=6, fig.align='center', fig.cap="La escala de color indica el logaritmo base 10 de la proporción de virus viable a cada temperatura y punto en el tiempo. Como punto de referencia, el valor de corte para considerar que algo es estéril es -4."}
 library(lattice)
 
-levelplot(log10(Sup) ~ Tiempo + Temp, data = datos.nuevos,
-          drape = T)
+wireframe(Sup ~ Tiempo + Temp, 
+          data = datos.nuevos,
+          drape = T,
+          screen = list(z = -135, x = -70, y = 3))
 ```
 
 
