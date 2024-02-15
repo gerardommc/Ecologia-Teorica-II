@@ -24,10 +24,8 @@ Ver [Encuadre](Encuadre.pdf), [Programa](Programa.pdf), [Calendario de participa
         
         - [Representación espacial del modelo](Rep-esp-HeV.html)
     
-    - [Una mirada física](Nicho/Caso-físico.pdf)
-    
-    - [Una mirada biótica](Nicho/Caso-biotico.pdf)
-    
     - [Una mirada correlativa](Nicho/Caso-correlativo.pdf)
+    
+        - [Tutorial de spatstat](Nicho/Tutorial-spatstat.pdf)
     
 2. [Cambio climático](Cambio-climatico/Introduccion-CC.pdf)
