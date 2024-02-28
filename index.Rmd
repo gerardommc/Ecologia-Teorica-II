@@ -28,4 +28,16 @@ Ver [Encuadre](Encuadre.pdf), [Programa](Programa.pdf), [Calendario de participa
     
         - [Tutorial de spatstat](Nicho/Tutorial-spatstat.pdf)
     
-2. [Cambio climático](Cambio-climatico/Introduccion-CC.pdf)
+2. Cambio climático
+
+    - [Introducción](Cambio-climatico/Introduccion.pdf)
+    
+        - [El efecto mariposa](Cambio-climatico/Efecto-mariposa.R)
+        
+        - [Ecuaciones diferenciales parciales](Cambio-climatico/seno-Gordon.R)
+        
+    - [Escenarios de cambio climático](Cambio-climatico/Escenarios.pdf)
+    
+        - [Tutorial de escalamiento para uso en ecología](Cambio-climatico/Escalamiento.html)
+    
+    - [Impactos del cambio climático](Cambio-climatico/Impactos.pdf)
