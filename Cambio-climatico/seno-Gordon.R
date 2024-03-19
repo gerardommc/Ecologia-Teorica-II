@@ -12,7 +12,7 @@ ygrid <- setup.grid.1D(-7, 7, N = Ny); y <- ygrid$x.mid
 senoGordon2D <- function(t, C, parms) {
   u <- matrix(nrow = Nx, ncol = Ny, data = C[1 : (Nx*Ny)])
   v <- matrix(nrow = Nx, ncol = Ny, data = C[(Nx*Ny+1) : (2*Nx*Ny)])
-  dv <- tran.2D (C = u, C.x.up = 0, C.x.down = 0, C.y.up = 0, C.y.down = 0,
+  dv <- tran.2D(C = u, C.x.up = 0, C.x.down = 0, C.y.up = 0, C.y.down = 0,
                  D.x = 1, D.y = 1, dx = xgrid, dy = ygrid)$dC -
     sin(u)
   list(c(v, dv))

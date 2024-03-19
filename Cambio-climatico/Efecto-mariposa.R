@@ -13,6 +13,7 @@ chaos <- function(t, y, params) {
 yini <- c(x = 1, y = 1, z = 1)
 yini2 <- yini + c(1e-6, 0, 0)
 yini3 <- yini + c(1e-6, 1e-6, 0)
+
 times <- seq(0, 100, 0.01)
 out <- ode(y = yini, times = times, func = chaos, parms = 0)
 out2 <- ode(y = yini2, times = times, func = chaos, parms = 0)
