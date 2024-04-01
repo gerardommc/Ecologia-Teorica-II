@@ -31,6 +31,7 @@ points(brad.sp)
 
 ########### Análisis exploratorio
 
+dir.create("Tutorial-SDM")
 png("Tutorial-SDM/Pares.png", width = 3000, height = 3000)
 pairs(capas.rm)
 dev.off()
@@ -66,11 +67,19 @@ modelo <- ppm(brad.ppp ~ bio1 + bio12 + bio7 +
                 I(bio1^2) + I(bio12^2) + I(bio7^2), 
               covariates = capas.im)
 
-modelo.1 <- ppm(brad.ppp ~ bio1 + bio16 + bio17 + bio7 +
-                  I(bio1^2) + I(bio16^2)+ I(bio17^2) + I(bio7^2), 
+modelo.1 <- ppm(brad.ppp ~ bio1 + bio16 + bio7 +
+                  I(bio1^2) + I(bio16^2)+ I(bio7^2), 
                 covariates = capas.im)
 
+modelo.2 <- ppm(brad.ppp ~ bio1 + bio17 + bio7 +
+                  I(bio1^2) + I(bio17^2)+ I(bio7^2), 
+                covariates = capas.im)
+
+AIC(modelo); AIC(modelo.1); AIC(modelo.2)
+
 mod.step <- step(modelo.1)
+
+AIC(mod.step)
 
 summary(mod.step)
 
@@ -83,6 +92,7 @@ points(brad.ppp, pch = 20, cex = 0.1, col = "green")
 ## Mapas binarios
 
 k.mod <- envelope(mod.step, nsim = 39, "Kest")
+plot(k.mod)
 
 diagnose.ppm(mod.step)
 
