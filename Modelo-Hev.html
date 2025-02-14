@@ -1491,7 +1491,7 @@ border-radius: 0px;
 </div>
 
 
-<pre class="r"><code>datos &lt;- read.csv(&quot;Nicho/Datos/HeV-survival.csv&quot;)
+<pre class="r"><code>datos &lt;- read.csv(&quot;Nicho/Datos-HeV/HeV-survival.csv&quot;)
 
 d.4 &lt;- subset(datos, Temp == 4)
 d.22 &lt;- subset(datos, Temp == 22)
@@ -1565,7 +1565,7 @@ coef.pk &lt;- data.frame(par = c(&quot;ap&quot;, &quot;Bp&quot;, &quot;ak&quot;,
 <tbody>
 <tr class="odd">
 <td align="left">ap</td>
-<td align="right">-6.7525635</td>
+<td align="right">-6.7525636</td>
 </tr>
 <tr class="even">
 <td align="left">Bp</td>
@@ -1737,7 +1737,8 @@ t = \frac{-(\log S)^\frac{1}{\kappa}}{\rho}
 <p>En esta versión implícita como ecuación diferenciar podemos sustituir <span class="math inline">\(T(t), \rho(T), \kappa(T)\)</span>, para obtener la loquísima ecuación:</p>
 <p><span class="math display">\[
 \frac{dS}{dt} = - \left ( (\exp(\alpha_{\rho} + \beta_{\rho} (T_{min} + T_{dif}\cos^2(\pi t))) \exp(\alpha_{\kappa} + \beta_{\kappa} (T_{min} + T_{dif}\cos^2(\pi t))) (- \log S)^{1 - \frac{1}{\exp(\alpha_{\kappa} + \beta_{\kappa} (T_{min} + T_{dif}\cos^2(\pi t)))}} \right) S
-\]</span></p>
+\]</span>
+Fin de la parte I, <a href="index.html">regresar a la página principal del curso</a></p>
 </div>
 </div>
 </div>

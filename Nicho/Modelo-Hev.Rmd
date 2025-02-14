@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-datos <- read.csv("Nicho/Datos/HeV-survival.csv")
+datos <- read.csv("Datos-HeV/HeV-survival.csv")
 
 d.4 <- subset(datos, Temp == 4)
 d.22 <- subset(datos, Temp == 22)
@@ -150,7 +150,7 @@ Graficando las predicciones del modelo con `lattice`:
 ```{r fig.height=6, fig.width=5, fig.align='center', fig.cap="La escala de color indica el logaritmo base 10 de la proporción de virus viable a cada temperatura y punto en el tiempo. Como punto de referencia, el valor de corte para considerar que algo es estéril es -4."}
 library(lattice)
 
-levelplot(log10(Sup) ~ Temp + Tiempo, data = datos.nuevos,
+wireframe(log10(Sup) ~ Temp + Tiempo, data = datos.nuevos,
           drape = T)
 ```
 
@@ -205,3 +205,5 @@ Y terminamos sustituyendo $t$ para obtener:
 $$
 \frac{dS}{dt} = - \left ( \rho \kappa (- \log S)^{1 - \frac{1}{\kappa}} \right) S
 $$
+
+Fin de la parte I, [regresar a la página principal del curso](../../index.html)

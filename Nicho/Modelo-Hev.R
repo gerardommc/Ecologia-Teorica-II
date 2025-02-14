@@ -1,4 +1,4 @@
-datos <- read.csv("Nicho/Datos/HeV-survival.csv")
+datos <- read.csv("Nicho/Datos-HeV/HeV-survival.csv")
 
 d.4 <- subset(datos, Temp == 4)
 d.22 <- subset(datos, Temp == 22)
@@ -19,7 +19,7 @@ ggplot(d.56) + geom_point(aes(x = Time.h, y = ln.S)) +
 
 # Regresiones
 
-m4 <- nls(ln.S ~ -( rho * Time.h )^ (kappa), 
+m4 <- nls(ln.S ~ -(rho * Time.h)^(kappa), 
           data = d.4, 
           start = list(rho = 1, kappa = 0.9),
           lower = c(0.00001, 0.1),
@@ -33,7 +33,7 @@ m22 <- nls(ln.S ~ -( rho * Time.h )^ (kappa),
           lower = c(0.0001, 0.1),
           upper = c(1, 1),
           algorithm =  "port")
-m22
+summary(m22)
 
 m56 <- nls(ln.S ~ -( rho * Time )^ (kappa), 
           data = d.56, 
@@ -41,7 +41,7 @@ m56 <- nls(ln.S ~ -( rho * Time )^ (kappa),
           lower = c(0.1, 0.1),
           upper = c(105, 1.5),
           algorithm =  "port")
-m56
+summary(m56)
 
 # Identificando efecto de temperatura sobre rho y kappa
 
@@ -51,8 +51,8 @@ par.estim$Temp <-c(4, 22, 56)
 
 ggplot(par.estim) + geom_point(aes(x = Temp, y = log(rho))) +
   geom_smooth(aes(x = Temp, y = log(rho)), method = "lm")
-ggplot(par.estim) + geom_point(aes(x = Temp, y = log(kappa))) +
-  geom_smooth(aes(x = Temp, y = log(kappa)), method = "lm")
+ggplot(par.estim) + geom_point(aes(x = Temp, y = (kappa))) +
+  geom_smooth(aes(x = Temp, y = (kappa)), method = "lm")
 
 # Modelos para los parámetros
 
